@@ -1,22 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
-import { generateCoachPlan, type CoachResult } from "@/lib/coach.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Study Coach · AI Study Plan, Diet & Motivation" },
+      { title: "Study Coach · Study Plan, Diet & Motivation" },
       {
         name: "description",
         content:
-          "Log your study hours, mood, and diet — get an AI-generated study plan, diet tip, and motivation.",
+          "Log your study hours, mood, and diet — get a tailored study plan with mood and diet tips.",
       },
-      { property: "og:title", content: "Study Coach · AI Study Plan, Diet & Motivation" },
+      { property: "og:title", content: "Study Coach · Study Plan, Diet & Motivation" },
       {
         property: "og:description",
         content:
-          "Log your study hours, mood, and diet — get an AI-generated study plan, diet tip, and motivation.",
+          "Log your study hours, mood, and diet — get a tailored study plan with mood and diet tips.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -25,32 +23,43 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const MOODS = ["Great", "Good", "Okay", "Low", "Stressed"];
-const DIETS = ["Healthy", "Balanced", "Junk food", "Skipped meals"];
+const MOODS = ["Great", "Good", "Okay", "Tired", "Stressed"];
+const DIETS = ["Healthy", "Balanced", "Unhealthy", "Skipped meals"];
+
+type Plan = { title: string; items: string[]; extras: string[] };
+
+function buildPlan(hours: number, mood: string, diet: string): Plan {
+  let title: string;
+  let items: string[];
+
+  if (hours <= 1) {
+    title = "Quick Plan";
+    items = ["40 minutes study", "20 minutes revision"];
+  } else if (hours <= 3) {
+    title = "Balanced Plan";
+    items = ["Learn concepts", "Practice questions", "Revise key points"];
+  } else {
+    title = "Full Study Plan";
+    items = ["Deep learning", "Practice exercises", "Revision", "Take a self-test"];
+  }
+
+  const extras: string[] = [];
+  if (mood.toLowerCase() === "tired") extras.push("Take short breaks");
+  if (diet.toLowerCase() === "unhealthy") extras.push("Eat healthy food for better focus");
+
+  return { title, items, extras };
+}
 
 function Index() {
-  const generate = useServerFn(generateCoachPlan);
   const [hours, setHours] = useState("");
   const [mood, setMood] = useState("");
   const [diet, setDiet] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<CoachResult | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!hours || !mood || !diet) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
-    try {
-      const res = await generate({ data: { hours, mood, diet } });
-      setResult(res);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
+    setPlan(buildPlan(Number(hours) || 0, mood, diet));
   };
 
   return (
@@ -59,7 +68,7 @@ function Index() {
         <header className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Study Coach</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Share how your day went. Get an AI study plan, diet tip, and motivation.
+            Share your study hours, mood, and diet to get a tailored plan.
           </p>
         </header>
 
@@ -79,7 +88,7 @@ function Index() {
               step="0.5"
               value={hours}
               onChange={(e) => setHours(e.target.value)}
-              placeholder="e.g. 3.5"
+              placeholder="e.g. 2"
               required
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             />
@@ -123,43 +132,30 @@ function Index() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            {loading ? "Generating your plan…" : "Get my plan"}
+            Get my plan
           </button>
-
-          {error && (
-            <p className="text-sm text-destructive" role="alert">{error}</p>
-          )}
         </form>
 
-        {result && (
-          <section className="mt-6 space-y-4">
-            {result.fallback && (
-              <p className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-                Showing offline suggestions — AI service unavailable.
-              </p>
-            )}
-            <ResultCard title="Study Plan" body={result.studyPlan} />
-            {result.dietSuggestion && (
-              <ResultCard title="Diet Suggestion" body={result.dietSuggestion} />
-            )}
-            {result.motivation && (
-              <ResultCard title="Motivation" body={result.motivation} />
+        {plan && (
+          <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">{plan.title}</h2>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {plan.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            {plan.extras.length > 0 && (
+              <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-foreground">
+                {plan.extras.map((extra) => (
+                  <li key={extra}>{extra}</li>
+                ))}
+              </ul>
             )}
           </section>
         )}
       </div>
     </main>
-  );
-}
-
-function ResultCard({ title, body }: { title: string; body: string }) {
-  return (
-    <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{body}</p>
-    </article>
   );
 }
