@@ -249,22 +249,41 @@ function Index() {
         </form>
 
         {plan && (
-          <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">{plan.title}</h2>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+          <section className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div>
+              <p className="text-sm font-medium text-primary">{plan.greeting}</p>
+              <h2 className="mt-1 text-xl font-semibold text-foreground">{plan.title}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{plan.intro}</p>
+            </div>
+
+            <ul className="space-y-3">
               {plan.items.map((item) => (
-                <li key={item}>{item}</li>
+                <li
+                  key={item.title}
+                  className="rounded-xl border border-border bg-background/60 p-3"
+                >
+                  <p className="text-sm font-medium text-foreground">
+                    <span className="mr-2">{item.emoji}</span>
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
+                </li>
               ))}
             </ul>
-            {plan.extras.length > 0 && (
-              <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-foreground">
-                {plan.extras.map((extra) => (
-                  <li key={extra}>{extra}</li>
-                ))}
-              </ul>
+
+            {plan.moodNote && (
+              <p className="rounded-xl bg-muted p-3 text-sm text-foreground">{plan.moodNote}</p>
             )}
+            {plan.dietNote && (
+              <p className="rounded-xl bg-muted p-3 text-sm text-foreground">{plan.dietNote}</p>
+            )}
+
+            <p className="rounded-xl bg-primary/10 p-3 text-sm font-medium text-foreground">
+              {plan.motivation}
+            </p>
           </section>
         )}
+
       </div>
     </main>
   );
