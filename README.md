@@ -31,3 +31,4 @@ Students frequently experience burnout, poor study scheduling, and unhealthy hab
    ```bash
    git clone [https://github.com/batoolasmat11-1645/study-buddy-tracker.git](https://github.com/batoolasmat11-1645/study-buddy-tracker.git)
    cd study-buddy-tracker
+  
