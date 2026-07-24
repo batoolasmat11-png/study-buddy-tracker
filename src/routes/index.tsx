@@ -136,6 +136,11 @@ function Index() {
 
         {result && (
           <section className="mt-6 space-y-4">
+            {result.fallback && (
+              <p className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+                Showing offline suggestions — AI service unavailable.
+              </p>
+            )}
             <ResultCard title="Study Plan" body={result.studyPlan} />
             {result.dietSuggestion && (
               <ResultCard title="Diet Suggestion" body={result.dietSuggestion} />
