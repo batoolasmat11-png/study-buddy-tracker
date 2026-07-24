@@ -26,29 +26,139 @@ export const Route = createFileRoute("/")({
 const MOODS = ["Great", "Good", "Okay", "Tired", "Stressed"];
 const DIETS = ["Healthy", "Balanced", "Unhealthy", "Skipped meals"];
 
-type Plan = { title: string; items: string[]; extras: string[] };
+type PlanItem = { emoji: string; title: string; detail: string };
+type Plan = {
+  greeting: string;
+  title: string;
+  intro: string;
+  items: PlanItem[];
+  moodNote?: string;
+  dietNote?: string;
+  motivation: string;
+};
 
 function buildPlan(hours: number, mood: string, diet: string): Plan {
+  const moodLower = mood.toLowerCase();
+  const dietLower = diet.toLowerCase();
+
+  const greetings: Record<string, string> = {
+    great: "Hey superstar! 🌟",
+    good: "Hey there! 😊",
+    okay: "Hi friend! 👋",
+    tired: "Hey, I see you 💛",
+    stressed: "Take a breath — I've got you 🌿",
+  };
+  const greeting = greetings[moodLower] ?? "Hey there! 👋";
+
   let title: string;
-  let items: string[];
+  let intro: string;
+  let items: PlanItem[];
 
   if (hours <= 1) {
-    title = "Quick Plan";
-    items = ["40 minutes study", "20 minutes revision"];
+    title = "⚡ Your Quick Plan";
+    intro =
+      "Short on time? No problem — small, focused sessions add up faster than you'd think. Here's a light routine to keep your momentum going today:";
+    items = [
+      {
+        emoji: "📖",
+        title: "40 minutes of focused study",
+        detail:
+          "Pick ONE topic, silence your phone, and go deep. Quality beats quantity every single time.",
+      },
+      {
+        emoji: "🔁",
+        title: "20 minutes of revision",
+        detail:
+          "Skim your notes and try to recall the main ideas from memory before checking. That tiny effort locks it in.",
+      },
+    ];
   } else if (hours <= 3) {
-    title = "Balanced Plan";
-    items = ["Learn concepts", "Practice questions", "Revise key points"];
+    title = "⚖️ Your Balanced Plan";
+    intro =
+      "Nice — you've carved out real study time today. Let's make every minute count with a mix of learning, practice, and review:";
+    items = [
+      {
+        emoji: "🧠",
+        title: "Learn new concepts",
+        detail:
+          "Start with the hardest topic while your mind is fresh. Read actively — underline, ask questions, take short notes.",
+      },
+      {
+        emoji: "✍️",
+        title: "Practice questions",
+        detail:
+          "Apply what you just learned. Getting things wrong here is a WIN — it shows you exactly what to fix.",
+      },
+      {
+        emoji: "🔎",
+        title: "Revise key points",
+        detail:
+          "End with a 15-minute recap. Close the book and explain today's lesson out loud, like you're teaching a friend.",
+      },
+    ];
   } else {
-    title = "Full Study Plan";
-    items = ["Deep learning", "Practice exercises", "Revision", "Take a self-test"];
+    title = "🚀 Your Full Study Plan";
+    intro =
+      "Wow — you're putting in serious work today. Let's channel that energy into a well-structured deep-work day:";
+    items = [
+      {
+        emoji: "🧠",
+        title: "Deep learning block",
+        detail:
+          "Dive into a challenging topic for 60–90 minutes with zero distractions. This is where real growth happens.",
+      },
+      {
+        emoji: "✍️",
+        title: "Practice exercises",
+        detail:
+          "Work through problems until you can solve them without peeking. Struggle is the sign your brain is leveling up.",
+      },
+      {
+        emoji: "🔁",
+        title: "Revision session",
+        detail:
+          "Revisit yesterday's material too — spaced repetition is your secret weapon for long-term memory.",
+      },
+      {
+        emoji: "📝",
+        title: "Self-test",
+        detail:
+          "Finish with a timed mini-test. It builds real exam confidence and shows you what to focus on tomorrow.",
+      },
+    ];
   }
 
-  const extras: string[] = [];
-  if (mood.toLowerCase() === "tired") extras.push("Take short breaks");
-  if (diet.toLowerCase() === "unhealthy") extras.push("Eat healthy food for better focus");
+  let moodNote: string | undefined;
+  if (moodLower === "tired") {
+    moodNote =
+      "😴 I hear you — you're running low today. Please take short breaks (5 minutes every 25) and drink some water. Rest isn't lazy, it's fuel. Even a slow study day is still a step forward. 💛";
+  } else if (moodLower === "stressed") {
+    moodNote =
+      "🌿 Take 3 slow, deep breaths before you start. Break the plan into tiny 15-minute chunks — you don't have to do it all at once. You've handled hard days before, and you'll handle this one too.";
+  } else if (moodLower === "great") {
+    moodNote =
+      "🔥 You're in a golden state — ride that wave! This is the perfect time to tackle the topic you've been putting off.";
+  }
 
-  return { title, items, extras };
+  let dietNote: string | undefined;
+  if (dietLower === "unhealthy" || dietLower === "skipped meals") {
+    dietNote =
+      "🥗 Your brain runs on what you feed it. Try adding some real food — fruit, nuts, eggs, or a warm meal — so your focus doesn't crash mid-session. Small swaps make a huge difference in how sharp you feel.";
+  } else if (dietLower === "healthy") {
+    dietNote =
+      "🥑 Love it — your body is fueled and ready. Keep sipping water between study blocks and you'll feel unstoppable.";
+  }
+
+  const motivations = [
+    "Remember: you don't have to be perfect today — you just have to show up. I'm proud of you for even planning your day. Let's go! 💪",
+    "Every page you read, every question you try — it's a small deposit into future-you's success account. Keep going. ✨",
+    "Progress > perfection. One focused hour today beats a 'someday' that never comes. You've got this. 🌱",
+  ];
+  const motivation = motivations[Math.floor(Math.random() * motivations.length)];
+
+  return { greeting, title, intro, items, moodNote, dietNote, motivation };
 }
+
 
 function Index() {
   const [hours, setHours] = useState("");
@@ -139,22 +249,41 @@ function Index() {
         </form>
 
         {plan && (
-          <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">{plan.title}</h2>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+          <section className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div>
+              <p className="text-sm font-medium text-primary">{plan.greeting}</p>
+              <h2 className="mt-1 text-xl font-semibold text-foreground">{plan.title}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{plan.intro}</p>
+            </div>
+
+            <ul className="space-y-3">
               {plan.items.map((item) => (
-                <li key={item}>{item}</li>
+                <li
+                  key={item.title}
+                  className="rounded-xl border border-border bg-background/60 p-3"
+                >
+                  <p className="text-sm font-medium text-foreground">
+                    <span className="mr-2">{item.emoji}</span>
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
+                </li>
               ))}
             </ul>
-            {plan.extras.length > 0 && (
-              <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-foreground">
-                {plan.extras.map((extra) => (
-                  <li key={extra}>{extra}</li>
-                ))}
-              </ul>
+
+            {plan.moodNote && (
+              <p className="rounded-xl bg-muted p-3 text-sm text-foreground">{plan.moodNote}</p>
             )}
+            {plan.dietNote && (
+              <p className="rounded-xl bg-muted p-3 text-sm text-foreground">{plan.dietNote}</p>
+            )}
+
+            <p className="rounded-xl bg-primary/10 p-3 text-sm font-medium text-foreground">
+              {plan.motivation}
+            </p>
           </section>
         )}
+
       </div>
     </main>
   );
