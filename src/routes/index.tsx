@@ -1,20 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
+import { generateCoachPlan, type CoachResult } from "@/lib/coach.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Daily Check-In · Study, Mood & Diet Tracker" },
+      { title: "Study Coach · AI Study Plan, Diet & Motivation" },
       {
         name: "description",
         content:
-          "Log your daily study hours, mood, and diet in one simple form to build healthier habits.",
+          "Log your study hours, mood, and diet — get an AI-generated study plan, diet tip, and motivation.",
       },
-      { property: "og:title", content: "Daily Check-In · Study, Mood & Diet Tracker" },
+      { property: "og:title", content: "Study Coach · AI Study Plan, Diet & Motivation" },
       {
         property: "og:description",
         content:
-          "Log your daily study hours, mood, and diet in one simple form to build healthier habits.",
+          "Log your study hours, mood, and diet — get an AI-generated study plan, diet tip, and motivation.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -23,41 +25,41 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Entry = {
-  hours: string;
-  mood: string;
-  diet: string;
-};
-
 const MOODS = ["Great", "Good", "Okay", "Low", "Stressed"];
 const DIETS = ["Healthy", "Balanced", "Junk food", "Skipped meals"];
 
 function Index() {
+  const generate = useServerFn(generateCoachPlan);
   const [hours, setHours] = useState("");
   const [mood, setMood] = useState("");
   const [diet, setDiet] = useState("");
-  const [submitted, setSubmitted] = useState<Entry | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<CoachResult | null>(null);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!hours || !mood || !diet) return;
-    setSubmitted({ hours, mood, diet });
-  };
-
-  const handleReset = () => {
-    setHours("");
-    setMood("");
-    setDiet("");
-    setSubmitted(null);
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await generate({ data: { hours, mood, diet } });
+      setResult(res);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="min-h-screen bg-background px-4 py-12 flex items-center justify-center">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-xl">
         <header className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Daily Check-In</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Study Coach</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Log your study, mood, and diet for today.
+            Share how your day went. Get an AI study plan, diet tip, and motivation.
           </p>
         </header>
 
@@ -94,13 +96,9 @@ function Index() {
               required
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="" disabled>
-                Select your mood
-              </option>
+              <option value="" disabled>Select your mood</option>
               {MOODS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
+                <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>
@@ -116,54 +114,47 @@ function Index() {
               required
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="" disabled>
-                How did you eat?
-              </option>
+              <option value="" disabled>How did you eat?</option>
               {DIETS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
+                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Save entry
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Reset
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+          >
+            {loading ? "Generating your plan…" : "Get my plan"}
+          </button>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">{error}</p>
+          )}
         </form>
 
-        {submitted && (
-          <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">Today's entry</h2>
-            <dl className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Study hours</dt>
-                <dd className="font-medium text-foreground">{submitted.hours}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Mood</dt>
-                <dd className="font-medium text-foreground">{submitted.mood}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Diet</dt>
-                <dd className="font-medium text-foreground">{submitted.diet}</dd>
-              </div>
-            </dl>
+        {result && (
+          <section className="mt-6 space-y-4">
+            <ResultCard title="Study Plan" body={result.studyPlan} />
+            {result.dietSuggestion && (
+              <ResultCard title="Diet Suggestion" body={result.dietSuggestion} />
+            )}
+            {result.motivation && (
+              <ResultCard title="Motivation" body={result.motivation} />
+            )}
           </section>
         )}
       </div>
     </main>
+  );
+}
+
+function ResultCard({ title, body }: { title: string; body: string }) {
+  return (
+    <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{body}</p>
+    </article>
   );
 }
