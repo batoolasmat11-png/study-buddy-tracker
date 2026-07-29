@@ -1,5 +1,7 @@
 # Study Buddy AI (Lovable)
 
+This project demonstrates an AI-style study planner using rule-based logic instead of external AI APIs.
+
 This project is a study planner web app built using Lovable.dev.
 
 ## Features
