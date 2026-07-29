@@ -253,6 +253,9 @@ function Index() {
             <div>
               <p className="text-sm font-medium text-primary">{plan.greeting}</p>
               <h2 className="mt-1 text-xl font-semibold text-foreground">{plan.title}</h2>
+              <p className="mt-1 text-xs italic text-muted-foreground">
+                Generated using smart logic based on your inputs.
+              </p>
               <p className="mt-2 text-sm text-muted-foreground">{plan.intro}</p>
             </div>
 
